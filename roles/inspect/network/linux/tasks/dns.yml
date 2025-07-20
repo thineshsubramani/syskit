@@ -1,0 +1,23 @@
+- name: Check if /etc/resolv.conf exists
+  stat:
+    path: /etc/resolv.conf
+  register: resolv_stat
+  tags: dns
+
+- name: Print resolv.conf content if present
+  ansible.builtin.slurp:
+    path: /etc/resolv.conf
+  register: resolv_data
+  when: resolv_stat.stat.exists
+  tags: dns
+
+- name: Decode and display resolv.conf
+  debug:
+    msg: "{{ resolv_data.content | b64decode | b64decode }}"
+  when: resolv_stat.stat.exists
+  tags: dns
+
+- name: Query A records for example.com
+  set_fact:
+    dns_a: "{{ query('community.dns.lookup', 'example.com', type='A', wantlist=True) }}"
+  tags: dns

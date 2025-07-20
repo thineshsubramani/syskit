@@ -1,0 +1,3 @@
+# Disk remediation for Linux
+- name: Cleanup disk
+  command: apt clean
