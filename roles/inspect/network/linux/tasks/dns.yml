@@ -17,7 +17,7 @@
   when: resolv_stat.stat.exists
   tags: dns
 
-- name: Query A records for example.com
+- name: Query A records for google.com
   set_fact:
-    dns_a: "{{ query('community.dns.lookup', 'example.com', type='A', wantlist=True) }}"
+    dns_a: "{{ query('community.dns.lookup', 'google.com', type='A', wantlist=True) }}"
   tags: dns

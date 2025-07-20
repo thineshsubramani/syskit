@@ -10,4 +10,5 @@
 
     - name: Include Linux DNS tasks
       include_tasks: ../roles/inspect/network/linux/tasks/dns.yml
+      include_tasks: ../roles/inspect/network/linux/tasks/network_engine.yml
       when: ansible_os_family == "Debian"

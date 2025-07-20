@@ -1,0 +1,60 @@
+- name: Check if systemd-networkd is active
+  ansible.builtin.systemd:
+    name: systemd-networkd
+  register: networkd_status
+  ignore_errors: true
+
+- name: Check if NetworkManager is active
+  ansible.builtin.systemd:
+    name: NetworkManager
+  register: nm_status
+  ignore_errors: true
+
+- name: Check if netplan is installed (frontend)
+  command: which netplan
+  register: netplan_installed
+  changed_when: false
+  failed_when: false
+
+- name: Get netplan config files
+  find:
+    paths: /etc/netplan
+    patterns: "*.yaml"
+    recurse: yes
+  register: netplan_configs
+  when: netplan_installed.rc == 0
+
+- name: Print frontend/backend network engines 
+  debug:
+    msg: "{{ final_output.split('\n') }}"
+  vars:
+    final_output: |
+      === Detected Network Stack ===
+
+      {%- if netplan_installed is defined and netplan_installed.rc == 0 %}
+      Frontend: netplan (installed)
+      Status  : running
+      Config files:
+      {%- if netplan_configs is defined and netplan_configs.files | length > 0 %}
+      {%- for f in netplan_configs.files %}
+        • {{ f.path }}
+      {%- endfor %}
+      {%- else %}
+        • No netplan YAML configs found
+      {%- endif %}
+      {%- endif %}
+
+      {%- if networkd_status is defined and networkd_status.status.ActiveState == 'active' %}
+      Backend : systemd-networkd (active)
+      {%- endif %}
+
+      {%- if nm_status is defined and nm_status.status.ActiveState == 'active' %}
+      Backend : NetworkManager (active)
+      {%- endif %}
+
+      {%- if (netplan_installed is not defined or netplan_installed.rc != 0)
+         and (networkd_status is not defined or networkd_status.status.ActiveState != 'active')
+         and (nm_status is not defined or nm_status.status.ActiveState != 'active') %}
+      No known network engine is currently active.
+      {%- endif %}
+
