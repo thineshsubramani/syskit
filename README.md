@@ -6,7 +6,7 @@ This is made for SREs, DevOps engineers, or sysadmins who need to quickly debug,
 
 ---
 
-## Why I Built This
+## Use Cases
 
 * I wanted something minimal and efficient.
 * It had to work in both connected and air-gapped environments.
