@@ -1,8 +1,16 @@
 # syskit
 
-I built `syskit` as a lightweight, modular Ansible toolkit to **inspect**, **remediate**, and **set up** Linux or Windows systems. It runs **remotely over SSH** or **locally in offline environments** without needing heavy dependencies.
+I built `syskit` as a lightweight, modular Ansible toolkit to **inspect**, **remediate**, and **set up** Linux or Windows systems. It runs **remotely over SSH** or **locally in offline environments**.
 
-This is made for SREs, DevOps engineers, or sysadmins who need to quickly debug, harden, or bootstrap a machine.
+## Purpose
+
+Previously, I had some Bash scripts that pulled specific info during server failures like one I recently pushed to GitHub called network-debug.sh. It’s fully focused on grabbing the most common network details, step-by-step, to track down root causes.
+
+I’ve got more scripts for stuff like disk and processes too. But now I’m thinking bigger-modular. I considered Go, but then remembered Ansible supports roles, which nails the modular need and comes with a solid ecosystem. Best part? Everything’s in YAML, and I can still drop in my Bash logic if I want.
+
+I’m designing it to do more than just debug. If it detects common issues, I can hook in workflows to automatically fix stuff. It runs offline, no network needed, and with Ansible, I can load it across multiple servers easy.
+
+It’s all built to be modular, so I can add new logic later or tailor it for specific use cases. That’s why I’m going hard on roles: so I can quickly build out debug and remediation workflows for whatever pops up.
 
 ---
 
