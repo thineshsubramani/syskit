@@ -1,0 +1,42 @@
+- name: Gather necessary system facts
+  ansible.builtin.setup:
+    gather_subset:
+      - hardware
+      - network
+      - distribution
+      - kernel
+      - virtual
+  tags: always
+
+- name: Set normalized system facts
+  ansible.builtin.set_fact:
+    sysinfo:
+      os_family: "{{ ansible_os_family }}"
+      distro: "{{ ansible_distribution }}"
+      distro_version: "{{ ansible_distribution_version }}"
+      distro_major_version: "{{ ansible_distribution_major_version | int }}"
+      kernel: "{{ ansible_kernel }}"
+      arch: "{{ ansible_architecture }}"
+      hostname: "{{ ansible_hostname }}"
+      fqdn: "{{ ansible_fqdn | default(ansible_hostname) }}"
+      virtualization_type: "{{ ansible_virtualization_type | default('unknown') }}"
+      virtualization_role: "{{ ansible_virtualization_role | default('unknown') }}"
+      is_container: >-
+        {{
+          (ansible_virtualization_type in ['docker', 'lxc']) and
+          (ansible_virtualization_role == 'guest')
+        }}
+  tags: always
+
+- name: Print normalized system info
+  debug:
+    msg:
+      - "OS Family      : {{ sysinfo.os_family }}"
+      - "Distro         : {{ sysinfo.distro }} {{ sysinfo.distro_version }} (major: {{ sysinfo.distro_major_version }})"
+      - "Kernel         : {{ sysinfo.kernel }}"
+      - "Architecture   : {{ sysinfo.arch }}"
+      - "Hostname       : {{ sysinfo.hostname }}"
+      - "FQDN           : {{ sysinfo.fqdn }}"
+      - "Virtualization : {{ sysinfo.virtualization_type }} (role: {{ sysinfo.virtualization_role }})"
+      - "Containerized  : {{ sysinfo.is_container }}"
+  tags: always

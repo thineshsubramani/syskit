@@ -1,0 +1,4 @@
+# requirements.yml
+collections:
+  - name: community.dns
+    version: ">=2.2.0"

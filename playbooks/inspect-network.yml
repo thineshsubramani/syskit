@@ -1,4 +1,4 @@
-- name: Inspect DNS config on Linux and Windows
+- name: Inspect Network
   hosts: localhost
   connection: local
   gather_facts: true
@@ -7,8 +7,15 @@
     - name: Print OS family
       debug:
         msg: "{{ ansible_os_family }}"
+        
+    - name: Gather OS Information
+      include_tasks: ../roles/common/linux/tasks/os_info.yml
+      when: ansible_os_family == "Debian"
 
-    - name: Include Linux DNS tasks
+    - name: Include DNS tasks
       include_tasks: ../roles/inspect/network/linux/tasks/dns.yml
+      when: ansible_os_family == "Debian"
+
+    - name: Include Network Engine tasks
       include_tasks: ../roles/inspect/network/linux/tasks/network_engine.yml
       when: ansible_os_family == "Debian"

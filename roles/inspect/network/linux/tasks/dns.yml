@@ -1,23 +1,96 @@
 - name: Check if /etc/resolv.conf exists
   stat:
     path: /etc/resolv.conf
-  register: resolv_stat
+  register: resolv_conf_stat
   tags: dns
 
-- name: Print resolv.conf content if present
+- name: Show /etc/resolv.conf path
+  debug:
+    msg: "/etc/resolv.conf exists"
+  when: resolv_conf_stat.stat.exists
+  tags: dns
+
+- name: Read /etc/resolv.conf
   ansible.builtin.slurp:
     path: /etc/resolv.conf
-  register: resolv_data
-  when: resolv_stat.stat.exists
+  register: resolv_conf_raw
+  when: resolv_conf_stat.stat.exists
   tags: dns
-
-- name: Decode and display resolv.conf
+  
+- name: Print /etc/resolv.conf (no comments, pretty)
   debug:
-    msg: "{{ resolv_data.content | b64decode | b64decode }}"
-  when: resolv_stat.stat.exists
+    msg: "{{ resolv_conf_raw.content | b64decode | split('\n') | reject('match', '^\\s*#') | reject('equalto', '') | list }}"
+  when: resolv_conf_stat.stat.exists
   tags: dns
 
-- name: Query A records for google.com
-  set_fact:
-    dns_a: "{{ query('community.dns.lookup', 'google.com', type='A', wantlist=True) }}"
+
+- name: Detect DNS backend (systemd-resolved, dnsmasq, named)
+  shell: |
+    if systemctl is-active --quiet systemd-resolved; then echo "systemd-resolved"; 
+    elif systemctl is-active --quiet dnsmasq; then echo "dnsmasq"; 
+    elif systemctl is-active --quiet named; then echo "bind9"; 
+    else echo "Unknown or not running"; fi
+  register: dns_backend
+  changed_when: false
+  tags: dns
+
+- name: Print detected DNS backend
+  debug:
+    msg: "DNS backend in use: {{ dns_backend.stdout }}"
+  tags: dns
+
+- name: Check if dig is installed
+  ansible.builtin.command: which dig
+  register: dig_path
+  failed_when: false
+  changed_when: false
+  tags: dns
+
+- name: Check if netstat is installed
+  ansible.builtin.command: which netstat
+  register: netstat_path
+  failed_when: false
+  changed_when: false
+  tags: dns
+
+- name: Report tool availability
+  debug:
+    msg:
+      - "dig path: {{ dig_path.stdout | default('not found') }}"
+      - "netstat path: {{ netstat_path.stdout | default('not found') }}"
+  tags: dns
+
+# --- DIG Test ---
+
+- name: Run dig for google.com
+  shell: "dig +short google.com"
+  register: dig_google
+  when: dig_path.rc == 0
+  changed_when: false
+  failed_when: dig_google.rc != 0
+  tags: dns
+
+- name: Run dig for localhost
+  shell: "dig +short localhost"
+  register: dig_localhost
+  when: dig_path.rc == 0
+  changed_when: false
+  failed_when: dig_localhost.rc != 0
+  tags: dns
+
+- name: Print dig results
+  debug:
+    msg:
+      - "google.com resolves to: {{ dig_google.stdout_lines }}"
+      - "localhost resolves to: {{ dig_localhost.stdout_lines }}"
+  when:
+    - dig_path.rc == 0
+    - dig_google is defined
+    - dig_localhost is defined
+  tags: dns
+
+- name: Fallback message if dig failed or skipped
+  debug:
+    msg: "Skipping DNS dig lookup output: dig not installed or failed to execute."
+  when: dig_path.rc != 0 or dig_google is not defined or dig_localhost is not defined
   tags: dns
